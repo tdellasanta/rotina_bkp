@@ -1,0 +1,40 @@
+from netmiko import ConnectHandler
+import getpass
+import os
+from netmiko.ssh_exception import NetMikoTimeoutException
+
+#Pasta onde sera salvo os arquivos
+location = '/home/User/Documentos/BKP_CISCO/'
+
+# Credenciais de acesso
+username = input("Usuário: ")
+password = getpass.getpass("Password: ")
+secret = getpass.getpass("Enable_Pass: ")
+
+# Loop de conexao
+with open("devices_file", 'r') as hostsfile:
+    for line in hostsfile:
+        hostline = line.strip()
+        cisco = {
+            'device_type': 'cisco_ios',
+            'host': hostline,
+            'username': username,
+            'password': password,
+            'secret': secret,
+        }
+        # Tentativa de Conexao
+        try:
+            net_connect = ConnectHandler(**cisco)
+        except (NetMikoTimeoutException):
+            print ('Timeout device: ' + hostline)
+            continue
+        # Comandos enviados
+        net_connect.enable()
+        net_connect.send_command('ter len 0')
+        output = net_connect.send_command('sh run')
+
+        # Salva a saida do sh run
+        outputfile = os.path.join(location, hostline +".txt")
+        with open(outputfile, 'w') as result:
+            x = result.write(output)
+            print(x)
